@@ -237,11 +237,15 @@ void deletePasswordFromPasswordList(unsigned char key[], const string& fileName,
     auto passwords = stringToVector<ResourcePassword>(decryptedData, [](const string& resourceName, const string& password) {
         return ResourcePassword{ resourceName, password };
         });
+    auto originalSize = passwords.size();
     passwords.erase(remove_if(passwords.begin(), passwords.end(),
         [&resourceNameToDelete](const ResourcePassword& resource) {
             return resource.resourceName == resourceNameToDelete;
         }),
         passwords.end());
+    if (passwords.size() == originalSize) {
+        cout << RED << "Resource does not exist. Nothing has been deleted" << RESET << endl;
+    }
 
     string newData = vectorToStringResourcePassword(passwords);
     vector<unsigned char> newEncrypted = encryptData(key, newData);
