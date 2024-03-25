@@ -5,6 +5,7 @@
 #include <vector>
 #include <cstring>
 #include <functional>
+#include <iomanip>
 #if defined(_WIN32) || defined(_WIN64)
 #include <conio.h>
 #else
@@ -263,8 +264,13 @@ void printPasswordList(unsigned char key[], const string& fileName) {
     auto passwords = stringToVector<ResourcePassword>(decryptedData, [](const string& resourceName, const string& password) {
         return ResourcePassword{ resourceName, password };
         });
+    int maxLength = 0;
     for (const auto& item : passwords) {
-        cout << MAGENTA << "Resource Name: " << RESET << item.resourceName << CYAN << ", Password: "<< RESET << item.password  << endl;
+        maxLength = (maxLength > item.resourceName.size()) ? maxLength : item.resourceName.size();
+    }
+    cout <<left;
+    for (const auto& item : passwords) {
+        cout << MAGENTA << setw(16) << "Resource Name: " << RESET << setw(maxLength + 1) << item.resourceName << CYAN << " Password: "<< RESET << item.password  << endl;
     }
     cout << endl;
 }
