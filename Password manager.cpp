@@ -23,11 +23,13 @@ int getch(void) {
 }
 #endif
 #include "AES.hpp"
+
 using namespace std;
+
 template<typename T>
 vector<T> stringToVector(const string& data, function<T(const string&, const string&)> createItem) {
     vector<T> items;
-    std::istringstream stream(data);
+    istringstream stream(data);
     string first, second;
 
     while (getline(stream, first) && getline(stream, second)) {
@@ -37,13 +39,13 @@ vector<T> stringToVector(const string& data, function<T(const string&, const str
     return items;
 }
 
-const std::string RED = "\033[31m";      
-const std::string GREEN = "\033[32m";    
-const std::string YELLOW = "\033[33m";   
-const std::string BLUE = "\033[34m";    
-const std::string MAGENTA = "\033[35m";  
-const std::string CYAN = "\033[36m";     
-const std::string RESET = "\033[0m";
+const string RED = "\033[31m";      
+const string GREEN = "\033[32m";    
+const string YELLOW = "\033[33m";   
+const string BLUE = "\033[34m";    
+const string MAGENTA = "\033[35m";  
+const string CYAN = "\033[36m";     
+const string RESET = "\033[0m";
 
 struct masterPasswordFileName {
     string masterPassword;
@@ -67,32 +69,12 @@ void writeDataToFile(const string& fileName, const vector<unsigned char>& data) 
     else cout << RED << "Unable to open file for writing." << RESET << endl;
     cout << endl;
 }
-/*
-vector<masterPasswordFileName> stringToVectorMasterPasswordFileName(const string& data) {
-    vector<masterPasswordFileName> items;
-    istringstream stream(data);
-    string masterPassword, fileName;
 
-    while (getline(stream, masterPassword) && getline(stream, fileName)) {
-        items.push_back({ masterPassword, fileName });
-    }
-
-    return items;
-}
-
-vector<ResourcePassword> stringToVectorResourcePassword(const string& data) {
-    vector<ResourcePassword> passwords;
-    stringstream stream(data);
-    string resourceName, password;
-    while (getline(stream, resourceName) && getline(stream, password)) {
-        passwords.push_back({ resourceName, password });
-    }
-    return passwords;
-}
-*/
 string vectorToStringMasterPasswordFileName(const vector<masterPasswordFileName>& items) {
     stringstream stream;
-    for (const auto& item : items) stream << item.masterPassword << "\n" << item.fileName << "\n";
+    for (const auto& item : items) {
+        stream << item.masterPassword << "\n" << item.fileName << "\n";
+    }
     return stream.str();
 }
 
@@ -195,7 +177,6 @@ string getDecryptedDataFromFile(unsigned char key[], const string& fileName) {
 void addPasswordToPasswordList(unsigned char key[], const string& fileName) {
     string decryptedData = getDecryptedDataFromFile(key, fileName);
 
-    //vector<ResourcePassword> passwords = stringToVectorResourcePassword(decryptedData);
     auto passwords = stringToVector<ResourcePassword>(decryptedData, [](const string& resourceName, const string& password) {
         return ResourcePassword{ resourceName, password };
         });
@@ -228,7 +209,6 @@ void addPasswordToPasswordList(unsigned char key[], const string& fileName) {
 void addNewMasterPassword(unsigned char key[], const string& fileName) {
     string decryptedData = getDecryptedDataFromFile(key, fileName);
 
-    //vector<masterPasswordFileName> items = stringToVectorMasterPasswordFileName(decryptedData);
     auto items = stringToVector<masterPasswordFileName>(decryptedData, [](const string& masterPassword, const string& fileName) {
         return masterPasswordFileName{ masterPassword, fileName };
         });
@@ -253,11 +233,11 @@ void deletePasswordFromPasswordList(unsigned char key[], const string& fileName,
         cout << endl;
         return;
     }
-    //vector<ResourcePassword> passwords = stringToVectorResourcePassword(decryptedData);
+   
     auto passwords = stringToVector<ResourcePassword>(decryptedData, [](const string& resourceName, const string& password) {
         return ResourcePassword{ resourceName, password };
         });
-    passwords.erase(std::remove_if(passwords.begin(), passwords.end(),
+    passwords.erase(remove_if(passwords.begin(), passwords.end(),
         [&resourceNameToDelete](const ResourcePassword& resource) {
             return resource.resourceName == resourceNameToDelete;
         }),
@@ -275,7 +255,7 @@ void printPasswordList(unsigned char key[], const string& fileName) {
         cout << endl;
         return;
     }
-    //vector<ResourcePassword> items = stringToVectorResourcePassword(decryptedData);
+    
     auto passwords = stringToVector<ResourcePassword>(decryptedData, [](const string& resourceName, const string& password) {
         return ResourcePassword{ resourceName, password };
         });
@@ -288,11 +268,11 @@ void printPasswordList(unsigned char key[], const string& fileName) {
 string getFileNameByMasterPassword(unsigned char key[], const string& inputPassword, const string& fileName) {
     string decryptedData = getDecryptedDataFromFile(key, fileName);
     if (decryptedData == "") {
-        cout << RED << "Master password is incorrect or does not exist." << RESET << endl;
+        cout << RED << "Any Master passwords dont exist. Be sure that file mainData.dat in the same directory with exe file " << RESET << endl;
         cout << endl;
         return "";
     }
-    //vector<masterPasswordFileName> mainItems = stringToVectorMasterPasswordFileName(decryptedData);
+    
     auto items = stringToVector<masterPasswordFileName>(decryptedData, [](const string& masterPassword, const string& fileName) {
         return masterPasswordFileName{ masterPassword, fileName };
         });
@@ -301,6 +281,10 @@ string getFileNameByMasterPassword(unsigned char key[], const string& inputPassw
             return item.fileName;
         }
     }
+    cout << RED << "Master password is incorrect or does not exist." << RESET << endl;
+    cout << endl;
+    return "";
+
 }
 
 int main() {
@@ -321,14 +305,26 @@ int main() {
         cout << YELLOW << "5. Exit." << RESET << endl;
         cout << endl;
         cout <<"--------------------------------------------------------------------------------" << endl;
-        
-        cin >> selection;
+        cout << GREEN << "Enter Menu number: " << RESET;
+        while (!(cin >> selection)) {
+            if (cin.eof()) {
+                cout << "Entry completed unexpectedly." << endl;
+                return 1;
+            }
+            else if (cin.fail()) {
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                cout << RED << "Wrong input. Please enter 1, 2, 3 or 3 to exit" << RESET << endl;
+            }
+        }
         switch (selection) {
         case 1:
             passwordValidate = getPasswordWithAsterisk("Enter your Master Password: ");
             cout << endl;
             fileName = getFileNameByMasterPassword(key, passwordValidate, "mainData.dat");
-            printPasswordList(key, fileName);
+            if (fileName != "") {
+                printPasswordList(key, fileName);
+            }
             break;
         case 2:
             passwordValidate = getPasswordWithAsterisk("Enter your Master Password: ");
